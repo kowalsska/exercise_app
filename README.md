@@ -1,3 +1,6 @@
 # exercise_app
 
-Hello world!
+To run the app:
+`bash start.sh`
+
+And follow the prompts
