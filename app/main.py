@@ -29,10 +29,8 @@ def set_root_dir(rd: str):
 def listfiles(q: str = Query(None)):
     path = join(ROOT_DIR, q) if q else ROOT_DIR
     items = get_path_items(path)
-    resp = {
-        "count": len(items), 
-        "items": items
-    }
+    items_json_encoded = jsonable_encoder(items)
+    resp = {"count": len(items), "items": items_json_encoded}
     return JSONResponse(content=resp)
 
 
@@ -53,15 +51,18 @@ def get_path_items(path: str):
     if file_extension and file_extension != ".txt":
         raise HTTPException(status_code=404, detail="Can only read .txt files")
 
+    items = []
     if isdir(path):
-        return get_dir(path)
+        items = get_dir(path)
     else:
-        return get_file(path)
+        items = get_file(path)
+
+    return items
 
 
 def get_dir(path: str):
     """
-    Get list of items in a directory at the given filepath formatted as JSON
+    Get list of items in a directory at the given filepath
     """
     items = listdir(path)
     dir_list = []
@@ -69,37 +70,31 @@ def get_dir(path: str):
         item_path = join(path, item)
         owner, size, permissions = get_stats(item_path)
         dir_list.append(
-            {
-                "name": item, 
-                "owner": owner, 
-                "size": size, 
-                "permissions": permissions
-            }
+            {"name": item, "owner": owner, "size": size, "permissions": permissions}
         )
 
-    return jsonable_encoder(dir_list)
+    return dir_list
 
 
 def get_file(path: str):
     """
-    Get file's info and content formatted as JSON
+    Get file's info and content
     """
+    content = None
     with open(path) as f:
         content = f.read()
 
     filename, _ = splitext(path)
     owner, size, permissions = get_stats(path)
-    return jsonable_encoder(
-        [
-            {
-                "name": filename,
-                "owner": owner,
-                "size": size,
-                "permissions": permissions,
-                "content": content,
-            }
-        ]
-    )
+    return [
+        {
+            "name": filename,
+            "owner": owner,
+            "size": size,
+            "permissions": permissions,
+            "content": content,
+        }
+    ]
 
 
 def get_stats(path: str):
