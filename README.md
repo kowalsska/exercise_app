@@ -22,7 +22,7 @@ Use query param `q` to traverse the current directory. For example:
 
 
 ### Documentation
-When the app is running you can access the automatically generated documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+When the app is running you can access the automatically generated documentation at [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
 
 ## Testing
