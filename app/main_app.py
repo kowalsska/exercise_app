@@ -7,6 +7,8 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
+import util
+
 
 ROOT_DIR = ""
 FILES_ROOT = "/files"
@@ -34,7 +36,7 @@ class Response(BaseModel):
 
 
 @app.get("/", response_model=Response)
-def list_files(q: str = Query(None)):
+def list_items(q: str = Query(None)):
     path = safe_path_join(path=q, root=ROOT_DIR)
     items = get_path_items(path)
     items_json_encoded = jsonable_encoder(items)
@@ -44,6 +46,95 @@ def list_files(q: str = Query(None)):
         "count": len(items),
         "items": items_json_encoded,
     }
+    return JSONResponse(content=resp)
+
+
+class AddFile(BaseModel):
+    name: str
+    owner: Optional[int]
+    permissions: Optional[int]
+    content: Optional[str]
+
+
+@app.post("/file", response_model=Item)
+def add_file(item: AddFile, q: str = Query(None)):
+    path = safe_path_join(path=q, root=ROOT_DIR)
+    if os.path.isdir(path):
+        filepath = util.write_file(path, item)
+        resp = util.get_file(filepath)
+        return JSONResponse(content=jsonable_encoder(resp))
+    elif not item.name:
+        raise HTTPException(status_code=403, detail="New file requires a name.")
+    else:
+        raise HTTPException(
+            status_code=403, detail="Specified location is not a directory."
+        )
+
+
+@app.put("/file", response_model=Item)
+def update_file(item: AddFile, q: str = Query(None)):
+    filepath = os.path.join(q, item.name)
+    path = safe_path_join(path=q, root=ROOT_DIR)
+    filepath = util.write_file(path, item)
+
+    if not os.path.exists(filepath):
+        raise HTTPException(
+            status_code=403, detail="Failed to update or create a file."
+        )
+
+    resp = get_file(filepath)
+    return JSONResponse(content=jsonable_encoder(resp))
+
+
+class DeleteFile(BaseModel):
+    name: str
+
+
+@app.delete("/file", response_model=Item)
+def delete_file(item: DeleteFile, q: str = Query(None)):
+    filepath = os.path.join(q, item.name)
+    safe_path = safe_path_join(path=filepath, root=ROOT_DIR)
+    if not os.path.exists(safe_path):
+        raise HTTPException(status_code=404, detail="File does not exists.")
+
+    resp = util.get_file(safe_path)
+    os.remove(safe_path)
+    return JSONResponse(content=jsonable_encoder(resp))
+
+
+class UpdateDir(BaseModel):
+    name: str
+
+
+@app.post("/dir", response_model=Response)
+def add_dir(item: UpdateDir, q: str = Query(None)):
+    safe_path = safe_path_join(path=q, root=ROOT_DIR)
+    path = util.make_dir(safe_path, item.name)
+    items = util.get_dir(path)
+    items_json_encoded = jsonable_encoder(items)
+    resp = {
+        "path": get_host_path(path),
+        "count": len(items),
+        "items": items_json_encoded,
+    }
+    return JSONResponse(content=resp)
+
+
+@app.delete("/dir", response_model=Response)
+def delete_dir(item: UpdateDir, q: str = Query(None)):
+    safe_path = safe_path_join(path=q, root=ROOT_DIR)
+    dir_path = os.path.join(safe_path, item.name)
+    if not os.path.isdir(dir_path):
+        raise HTTPException(status_code=404, detail="This directory doesn't exist.")
+
+    items = util.get_dir(dir_path)
+    items_json_encoded = jsonable_encoder(items)
+    resp = {
+        "path": get_host_path(dir_path),
+        "count": len(items),
+        "items": items_json_encoded,
+    }
+    util.remove_dir(dir_path)
     return JSONResponse(content=resp)
 
 
@@ -66,59 +157,11 @@ def get_path_items(path: str):
 
     items = []
     if os.path.isdir(path):
-        items = get_dir(path)
+        items = util.get_dir(path)
     else:
-        items = get_file(path)
+        items = util.get_file(path)
 
     return items
-
-
-def get_dir(path: str):
-    """
-    Get list of items in a directory at the given filepath
-    """
-    items = os.listdir(path)
-    dir_list = []
-    for item in items:
-        item_path = os.path.join(path, item)
-        owner, size, permissions = get_stats(item_path)
-        dir_list.append(
-            {"name": item, "owner": owner, "size": size, "permissions": permissions}
-        )
-
-    return dir_list
-
-
-def get_file(path: str):
-    """
-    Get file's info and content
-    """
-    content = None
-    with open(path) as f:
-        content = f.read()
-
-    filename = os.path.basename(path)
-    owner, size, permissions = get_stats(path)
-    return [
-        {
-            "name": filename,
-            "owner": owner,
-            "size": size,
-            "permissions": permissions,
-            "content": content,
-        }
-    ]
-
-
-def get_stats(path: str):
-    """
-    Get item's (file or dir) stats for a given filepath
-    """
-    if not os.path.exists(path):
-        return None, None, None
-
-    item_stat = os.stat(path)
-    return item_stat.st_uid, item_stat.st_size, item_stat.st_mode
 
 
 def get_host_path(path):
