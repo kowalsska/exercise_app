@@ -1,53 +1,39 @@
-import json
 import os
+from pydantic import BaseModel
+from typing import List, Optional
 import uvicorn
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-import pdb
 
 ROOT_DIR = ""
 FILES_ROOT = "/files"
 
-tags_metadata = [
-    {
-        "name": "files",
-        "description": "Operations with directories and files.",
-    }
-]
 
 app = FastAPI(
     title="Coding Exercise",
     description="Tiny REST API app for directory traversal",
     version="0.0.1",
-    openapi_tags=tags_metadata,
 )
 
 
-def safe_path_join(path: str = None, root: str = FILES_ROOT):
-    """
-    Unify the path format in case the user prepended a backslash, remove trailing backslash
-    """
-    if path and path[0] == "/":
-        safe_path = "".join([root, path])
-    else:
-        path = path if path else ""
-        safe_path = os.path.join(root, path)
-    
-    return safe_path[:-1] if safe_path and safe_path[-1] == "/" else safe_path
+class Item(BaseModel):
+    name: str
+    owner: int
+    size: int
+    permissions: int
+    content: Optional[str]
 
 
-def set_root_dir(rd: str):
-    """
-    Sets global ROOT_DIR using the input provided by the user
-    """
-    global ROOT_DIR
-    ROOT_DIR = safe_path_join(path=rd)
+class Response(BaseModel):
+    path: str
+    count: int
+    items: List[Item]
 
 
-@app.get("/", tags=["files"])
+@app.get("/", response_model=Response)
 def list_files(q: str = Query(None)):
     path = safe_path_join(path=q, root=ROOT_DIR)
     items = get_path_items(path)
@@ -141,6 +127,27 @@ def get_host_path(path):
     """
     host_path = path.replace(FILES_ROOT, "", 1)
     return host_path if host_path else "/"
+
+
+def safe_path_join(path: str = None, root: str = FILES_ROOT):
+    """
+    Unify the path format in case the user prepended a backslash, remove trailing backslash
+    """
+    if path and path[0] == "/":
+        safe_path = "".join([root, path])
+    else:
+        path = path if path else ""
+        safe_path = os.path.join(root, path)
+
+    return safe_path[:-1] if safe_path and safe_path[-1] == "/" else safe_path
+
+
+def set_root_dir(rd: str):
+    """
+    Sets global ROOT_DIR using the input provided by the user
+    """
+    global ROOT_DIR
+    ROOT_DIR = safe_path_join(path=rd)
 
 
 if __name__ == "__main__":
