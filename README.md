@@ -39,7 +39,7 @@ make test
 I installed [this](https://chrome.google.com/webstore/detail/jsonview/chklaanhfefbnpoihckbnefhakgolnmc) Chrome plugin that automatically formats JSON data in the browser and makes it look more readable
 
 2.
-The application accesses the host's root directory. I wasn't able to access folders like Users or System until I changed this Docker configuration. It has something to do with latest macOS security features. If you encounter the same issue go to Docker's Preferences -> Experimental Features and disable `Use gRPC FUSE for file sharing`
+The application accesses the host's root directory. I wasn't able to access folders like Users or Volumes until I changed this Docker configuration. It has something to do with latest macOS security features. If you encounter the same issue go to Docker's Preferences -> Experimental Features and disable `Use gRPC FUSE for file sharing`
 ![alt text](https://i.imgur.com/aRoLWOe.png)
 
 

@@ -1,4 +1,4 @@
-.PHONY: lint test venvv setup
+.PHONY: lint test setup
 
 default: test
 
