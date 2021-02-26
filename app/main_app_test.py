@@ -144,6 +144,26 @@ class TestGetHostPath(unittest.TestCase):
         sub_path = "/Users/someone/files/home"
         self.assertEqual(main_app.get_host_path(path), sub_path)
 
+class TestSafePathJoin(unittest.TestCase):
+
+    def test_no_path_no_root(self):
+        self.assertEqual(main_app.safe_path_join(path="", root=""), "")
+
+    def test_no_path(self):
+        self.assertEqual(main_app.safe_path_join(path="", root="/home"), "/home")
+
+    def test_prepend_slash_no_root(self):
+        self.assertEqual(main_app.safe_path_join(path="/file.txt", root=""), "/file.txt")
+
+    def test_prepend_slash_root_and_path(self):
+        self.assertEqual(main_app.safe_path_join(path="/nested/file", root="/root"), "/root/nested/file")
+
+    def test_root_and_path(self):
+        self.assertEqual(main_app.safe_path_join(path="home", root="/root"), "/root/home")
+
+    def test_no_root(self):
+        self.assertEqual(main_app.safe_path_join(path="home", root=""), "home")
+
 
 if __name__ == "__main__":
     unittest.main()

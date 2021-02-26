@@ -11,26 +11,53 @@ import pdb
 ROOT_DIR = ""
 FILES_ROOT = "/files"
 
-app = FastAPI()
+tags_metadata = [
+    {
+        "name": "files",
+        "description": "Operations with directories and files.",
+    }
+]
+
+app = FastAPI(
+    title="Coding Exercise",
+    description="Tiny REST API app for directory traversal",
+    version="0.0.1",
+    openapi_tags=tags_metadata,
+)
+
+
+def safe_path_join(path: str = None, root: str = FILES_ROOT):
+    """
+    Unify the path format in case the user prepended a backslash, remove trailing backslash
+    """
+    if path and path[0] == "/":
+        safe_path = "".join([root, path])
+    else:
+        path = path if path else ""
+        safe_path = os.path.join(root, path)
+    
+    return safe_path[:-1] if safe_path and safe_path[-1] == "/" else safe_path
 
 
 def set_root_dir(rd: str):
+    """
+    Sets global ROOT_DIR using the input provided by the user
+    """
     global ROOT_DIR
-    ROOT_DIR = FILES_ROOT
-    if rd:
-        if rd[0] == "/":
-            ROOT_DIR = "".join([FILES_ROOT, rd])
-        else:
-            ROOT_DIR = os.path.join(FILES_ROOT, rd)
-    print("ROOT_DIR:", ROOT_DIR)
+    ROOT_DIR = safe_path_join(path=rd)
 
 
-@app.get("/")
+@app.get("/", tags=["files"])
 def list_files(q: str = Query(None)):
-    path = os.path.join(ROOT_DIR, q) if q else ROOT_DIR
+    path = safe_path_join(path=q, root=ROOT_DIR)
     items = get_path_items(path)
     items_json_encoded = jsonable_encoder(items)
-    resp = {"count": len(items), "items": items_json_encoded}
+
+    resp = {
+        "path": get_host_path(path),
+        "count": len(items),
+        "items": items_json_encoded,
+    }
     return JSONResponse(content=resp)
 
 
@@ -112,7 +139,8 @@ def get_host_path(path):
     """
     Strip container's root path from the given filepath to reflect host's root path
     """
-    return path.replace(FILES_ROOT, "", 1)
+    host_path = path.replace(FILES_ROOT, "", 1)
+    return host_path if host_path else "/"
 
 
 if __name__ == "__main__":

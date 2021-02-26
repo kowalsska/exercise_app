@@ -1,4 +1,5 @@
 #!/bin/bash
+
 app="exercise-app"
 
 docker stop ${app}

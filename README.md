@@ -1,4 +1,4 @@
-# Weave Grid Coding Exercise
+# Coding Exercise
 
 
 ## To run the app
@@ -10,11 +10,19 @@ Run this in the root directory of the project:
 
 And follow the prompts. Leave the input empty to access the host's root directory.
 
+(When running the app for the first time macOS will prompt you for allowing access to directories. Click Allow on all the prompts.)
+
 
 ### Instructions
 Use query param `q` to traverse the current directory. For example:
 
 `http://0.0.0.0:8000/?q=Users`
+
+`http://0.0.0.0:8000/?q=sys/kernel/irq`
+
+
+### Documentation
+When the app is running you can access the automatically generated documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 
 ## Testing
@@ -37,9 +45,9 @@ The application accesses the host's root directory. I wasn't able to access fold
 
 ## What it looks like
 
-![alt text](https://i.imgur.com/7ZeZRuu.png)
+![alt text](https://i.imgur.com/Y4CDopf.png)
 
 
-![alt text](https://i.imgur.com/BiXbIg1.png)
+![alt text](https://i.imgur.com/iue2D4m.png)
 
 
