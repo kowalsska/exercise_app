@@ -16,6 +16,7 @@ FILES_ROOT = "/files"
 
 app = FastAPI()
 
+
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -103,27 +104,22 @@ class AddFile(BaseModel):
             "description": "Bad request",
             "content": {
                 "application/json": {
-                    "example": [
-                        {"details": "New file requires a name"},
-                        {"details": "Specified location is not a directory"},
-                    ]
+                    "example": {"details": "Specified location is not a directory"}
                 }
             },
         },
     },
 )
 def add_file(item: AddFile, q: str = Query(None)):
-    path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
-    if os.path.isdir(path):
-        filepath = util.write_file(path, item)
-        resp = util.get_file(filepath)
-        return JSONResponse(content=jsonable_encoder(resp))
-    elif not item.name:
-        raise HTTPException(status_code=403, detail="New file requires a name.")
-    else:
+    safe_path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
+    if not os.path.isdir(safe_path):
         raise HTTPException(
             status_code=403, detail="Specified location is not a directory."
         )
+
+    filepath = util.write_file(safe_path, item)
+    resp = util.get_file(filepath)
+    return JSONResponse(content=jsonable_encoder(resp))
 
 
 @app.put(
@@ -144,9 +140,8 @@ def add_file(item: AddFile, q: str = Query(None)):
     },
 )
 def update_file(item: AddFile, q: str = Query(None)):
-    filepath = os.path.join(q, item.name)
-    path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
-    filepath = util.write_file(path, item)
+    safe_path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
+    filepath = util.write_file(safe_path, item)
 
     if not os.path.exists(filepath):
         raise HTTPException(
@@ -212,11 +207,11 @@ class UpdateDir(BaseModel):
 )
 def add_dir(item: UpdateDir, q: str = Query(None)):
     safe_path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
-    path = util.make_dir(safe_path, item.name)
-    items = util.get_dir(path)
+    dir_path = util.make_dir(safe_path, item.name)
+    items = util.get_dir(dir_path)
     items_json_encoded = jsonable_encoder(items)
     resp = {
-        "path": get_host_path(path),
+        "path": get_host_path(dir_path),
         "count": len(items),
         "items": items_json_encoded,
     }
