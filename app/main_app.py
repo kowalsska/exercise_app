@@ -10,7 +10,6 @@ from fastapi.responses import JSONResponse
 import util
 
 
-ROOT_DIR = ""
 FILES_ROOT = "/files"
 
 
@@ -61,7 +60,7 @@ class Response(BaseModel):
     },
 )
 def list_items(q: str = Query(None)):
-    path = safe_path_join(path=q, root=ROOT_DIR)
+    path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
     items = get_path_items(path)
     items_json_encoded = jsonable_encoder(items)
 
@@ -101,7 +100,7 @@ class AddFile(BaseModel):
     },
 )
 def add_file(item: AddFile, q: str = Query(None)):
-    path = safe_path_join(path=q, root=ROOT_DIR)
+    path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
     if os.path.isdir(path):
         filepath = util.write_file(path, item)
         resp = util.get_file(filepath)
@@ -133,7 +132,7 @@ def add_file(item: AddFile, q: str = Query(None)):
 )
 def update_file(item: AddFile, q: str = Query(None)):
     filepath = os.path.join(q, item.name)
-    path = safe_path_join(path=q, root=ROOT_DIR)
+    path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
     filepath = util.write_file(path, item)
 
     if not os.path.exists(filepath):
@@ -168,7 +167,7 @@ class DeleteFile(BaseModel):
 )
 def delete_file(item: DeleteFile, q: str = Query(None)):
     filepath = os.path.join(q, item.name)
-    safe_path = safe_path_join(path=filepath, root=ROOT_DIR)
+    safe_path = safe_path_join(path=filepath, root=os.environ["ROOT_DIR"])
     if not os.path.exists(safe_path):
         raise HTTPException(status_code=404, detail="File does not exists.")
 
@@ -199,7 +198,7 @@ class UpdateDir(BaseModel):
     },
 )
 def add_dir(item: UpdateDir, q: str = Query(None)):
-    safe_path = safe_path_join(path=q, root=ROOT_DIR)
+    safe_path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
     path = util.make_dir(safe_path, item.name)
     items = util.get_dir(path)
     items_json_encoded = jsonable_encoder(items)
@@ -239,7 +238,7 @@ def add_dir(item: UpdateDir, q: str = Query(None)):
     },
 )
 def delete_dir(item: UpdateDir, q: str = Query(None)):
-    safe_path = safe_path_join(path=q, root=ROOT_DIR)
+    safe_path = safe_path_join(path=q, root=os.environ["ROOT_DIR"])
     dir_path = os.path.join(safe_path, item.name)
     if not os.path.isdir(dir_path):
         raise HTTPException(status_code=404, detail="This directory doesn't exist.")
@@ -304,10 +303,10 @@ def safe_path_join(path: str = None, root: str = FILES_ROOT):
 
 def set_root_dir(rd: str):
     """
-    Sets global ROOT_DIR using the input provided by the user
+    Sets env var ROOT_DIR using the input provided by the user
     """
-    global ROOT_DIR
-    ROOT_DIR = safe_path_join(path=rd)
+    safe_root_dir = safe_path_join(path=rd)
+    os.environ["ROOT_DIR"] = safe_root_dir
 
 
 if __name__ == "__main__":
