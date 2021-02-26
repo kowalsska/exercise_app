@@ -11,6 +11,7 @@ import main_app
 class TestListFiles(unittest.TestCase):
     def setUp(self):
         super(TestListFiles, self).setUp()
+        os.environ["ROOT_DIR"] = ""
         self.client = TestClient(main_app.app)
 
         self.get_path_items_patcher = mock.patch("main_app.get_path_items")
@@ -33,7 +34,7 @@ class TestListFiles(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.mock_get_path_items.assert_called_once_with(
-            main_app.ROOT_DIR + "Documents/work"
+            os.environ["ROOT_DIR"] + "Documents/work"
         )
 
     def test_list_files_path_does_not_exists(self):
