@@ -16,13 +16,54 @@ And follow the prompts. Leave the input empty to access the host's root director
 ### Instructions
 Use query param `q` to traverse the current directory. For example:
 
-`http://0.0.0.0:8000/?q=Users`
+`GET http://0.0.0.0:8000/?q=Users`
 
-`http://0.0.0.0:8000/?q=sys/kernel/irq`
+`GET http://0.0.0.0:8000/?q=sys/kernel/irq`
+
+#### Adding, Updating, Deleting 
+Use Postman to perform adding, updating and deleting files.
+
+Example cURL requests:
+
+- Add a directory:
+```
+curl -X POST \
+  'http://0.0.0.0:8000/dir?q=Users/magdaprivate/Documents' \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"name": "house"
+}'
+```
+
+- Delete a file
+```
+curl -X DELETE \
+  'http://0.0.0.0:8000/file?q=Users/magdaprivate/Documents' \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"name": "cat.txt"
+}'
+```
+
+- Update a file
+```
+curl -X PUT \
+  'http://0.0.0.0:8000/file?q=Users/magdaprivate/Documents' \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"name": "magda2.txt",
+	"content": "hahahah"
+}'
+```
+
+Refer to the documentation to see the rest of available endpoints.
 
 
 ### Documentation
-When the app is running you can access the automatically generated documentation at [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+When the app is running you can access the automatically generated documentation at [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) or [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 
 ## Testing

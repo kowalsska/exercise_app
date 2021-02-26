@@ -55,7 +55,7 @@ def remove_dir(path):
         os.rmdir(path)
     except OSError:
         raise HTTPException(
-            status_code=404,
+            status_code=400,
             detail="This directory is not empty. Remove its contents first.",
         )
 
@@ -65,7 +65,7 @@ def make_dir(path, name):
     try:
         os.mkdir(dir_path)
     except FileExistsError:
-        raise HTTPException(status_code=404, detail="This directory already exists.")
+        raise HTTPException(status_code=403, detail="This directory already exists.")
     else:
         return dir_path
 

@@ -35,7 +35,31 @@ class Response(BaseModel):
     items: List[Item]
 
 
-@app.get("/", response_model=Response)
+@app.get(
+    "/",
+    response_model=Response,
+    responses={
+        200: {
+            "description": "Success",
+        },
+        400: {
+            "description": "Bad request",
+            "content": {
+                "application/json": {"example": {"details": "Can only read .txt files"}}
+            },
+        },
+        404: {
+            "description": "Not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "details": "The path does not exist or you don't have permissions to access it"
+                    }
+                }
+            },
+        },
+    },
+)
 def list_items(q: str = Query(None)):
     path = safe_path_join(path=q, root=ROOT_DIR)
     items = get_path_items(path)
@@ -56,7 +80,26 @@ class AddFile(BaseModel):
     content: Optional[str]
 
 
-@app.post("/file", response_model=Item)
+@app.post(
+    "/file",
+    response_model=Item,
+    responses={
+        200: {
+            "description": "Success",
+        },
+        403: {
+            "description": "Bad request",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {"details": "New file requires a name"},
+                        {"details": "Specified location is not a directory"},
+                    ]
+                }
+            },
+        },
+    },
+)
 def add_file(item: AddFile, q: str = Query(None)):
     path = safe_path_join(path=q, root=ROOT_DIR)
     if os.path.isdir(path):
@@ -71,7 +114,23 @@ def add_file(item: AddFile, q: str = Query(None)):
         )
 
 
-@app.put("/file", response_model=Item)
+@app.put(
+    "/file",
+    response_model=Item,
+    responses={
+        200: {
+            "description": "Success",
+        },
+        403: {
+            "description": "Bad request",
+            "content": {
+                "application/json": {
+                    "example": {"details": "Failed to update or create a file"},
+                }
+            },
+        },
+    },
+)
 def update_file(item: AddFile, q: str = Query(None)):
     filepath = os.path.join(q, item.name)
     path = safe_path_join(path=q, root=ROOT_DIR)
@@ -82,7 +141,7 @@ def update_file(item: AddFile, q: str = Query(None)):
             status_code=403, detail="Failed to update or create a file."
         )
 
-    resp = get_file(filepath)
+    resp = util.get_file(filepath)
     return JSONResponse(content=jsonable_encoder(resp))
 
 
@@ -90,7 +149,23 @@ class DeleteFile(BaseModel):
     name: str
 
 
-@app.delete("/file", response_model=Item)
+@app.delete(
+    "/file",
+    response_model=Item,
+    responses={
+        200: {
+            "description": "Success",
+        },
+        404: {
+            "description": "Bad request",
+            "content": {
+                "application/json": {
+                    "example": {"details": "File does not exists"},
+                }
+            },
+        },
+    },
+)
 def delete_file(item: DeleteFile, q: str = Query(None)):
     filepath = os.path.join(q, item.name)
     safe_path = safe_path_join(path=filepath, root=ROOT_DIR)
@@ -106,7 +181,23 @@ class UpdateDir(BaseModel):
     name: str
 
 
-@app.post("/dir", response_model=Response)
+@app.post(
+    "/dir",
+    response_model=Response,
+    responses={
+        200: {
+            "description": "Success",
+        },
+        403: {
+            "description": "Bad request",
+            "content": {
+                "application/json": {
+                    "example": {"details": "This directory already exists"},
+                }
+            },
+        },
+    },
+)
 def add_dir(item: UpdateDir, q: str = Query(None)):
     safe_path = safe_path_join(path=q, root=ROOT_DIR)
     path = util.make_dir(safe_path, item.name)
@@ -120,7 +211,33 @@ def add_dir(item: UpdateDir, q: str = Query(None)):
     return JSONResponse(content=resp)
 
 
-@app.delete("/dir", response_model=Response)
+@app.delete(
+    "/dir",
+    response_model=Response,
+    responses={
+        200: {
+            "description": "Success",
+        },
+        400: {
+            "description": "Bad request",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "details": "This directory is not empty. Remove its contents first"
+                    },
+                }
+            },
+        },
+        404: {
+            "description": "Not found",
+            "content": {
+                "application/json": {
+                    "example": {"details": "This directory doesn't exist"},
+                }
+            },
+        },
+    },
+)
 def delete_dir(item: UpdateDir, q: str = Query(None)):
     safe_path = safe_path_join(path=q, root=ROOT_DIR)
     dir_path = os.path.join(safe_path, item.name)
@@ -153,7 +270,7 @@ def get_path_items(path: str):
 
     _, file_extension = os.path.splitext(path)
     if file_extension and file_extension != ".txt":
-        raise HTTPException(status_code=404, detail="Can only read .txt files")
+        raise HTTPException(status_code=403, detail="Can only read .txt files")
 
     items = []
     if os.path.isdir(path):

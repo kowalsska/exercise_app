@@ -53,7 +53,7 @@ class TestListFiles(unittest.TestCase):
 
         response = self.client.get("/?q=cat.png")
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 403)
         self.assertTrue("Can only read .txt files" in response.text)
 
 
