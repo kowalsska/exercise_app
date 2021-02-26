@@ -1,17 +1,17 @@
 import json
+import os
 import uvicorn
-
-from os import path, listdir, walk, stat, chdir
-from os.path import isfile, join, exists, splitext, isdir
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-app = FastAPI()
+import pdb
 
 ROOT_DIR = ""
 FILES_ROOT = "/files"
+
+app = FastAPI()
 
 
 def set_root_dir(rd: str):
@@ -21,13 +21,13 @@ def set_root_dir(rd: str):
         if rd[0] == "/":
             ROOT_DIR = "".join([FILES_ROOT, rd])
         else:
-            ROOT_DIR = join(FILES_ROOT, rd)
+            ROOT_DIR = os.path.join(FILES_ROOT, rd)
     print("ROOT_DIR:", ROOT_DIR)
 
 
 @app.get("/")
-def listfiles(q: str = Query(None)):
-    path = join(ROOT_DIR, q) if q else ROOT_DIR
+def list_files(q: str = Query(None)):
+    path = os.path.join(ROOT_DIR, q) if q else ROOT_DIR
     items = get_path_items(path)
     items_json_encoded = jsonable_encoder(items)
     resp = {"count": len(items), "items": items_json_encoded}
@@ -38,7 +38,7 @@ def get_path_items(path: str):
     """
     Get directory or file details at the given filepath
     """
-    if not exists(path):
+    if not os.path.exists(path):
         host_path = get_host_path(path)
         raise HTTPException(
             status_code=404,
@@ -47,12 +47,12 @@ def get_path_items(path: str):
             ),
         )
 
-    _, file_extension = splitext(path)
+    _, file_extension = os.path.splitext(path)
     if file_extension and file_extension != ".txt":
         raise HTTPException(status_code=404, detail="Can only read .txt files")
 
     items = []
-    if isdir(path):
+    if os.path.isdir(path):
         items = get_dir(path)
     else:
         items = get_file(path)
@@ -64,10 +64,10 @@ def get_dir(path: str):
     """
     Get list of items in a directory at the given filepath
     """
-    items = listdir(path)
+    items = os.listdir(path)
     dir_list = []
     for item in items:
-        item_path = join(path, item)
+        item_path = os.path.join(path, item)
         owner, size, permissions = get_stats(item_path)
         dir_list.append(
             {"name": item, "owner": owner, "size": size, "permissions": permissions}
@@ -84,7 +84,7 @@ def get_file(path: str):
     with open(path) as f:
         content = f.read()
 
-    filename, _ = splitext(path)
+    filename = os.path.basename(path)
     owner, size, permissions = get_stats(path)
     return [
         {
@@ -101,10 +101,10 @@ def get_stats(path: str):
     """
     Get item's (file or dir) stats for a given filepath
     """
-    if not exists(path):
+    if not os.path.exists(path):
         return None, None, None
 
-    item_stat = stat(path)
+    item_stat = os.stat(path)
     return item_stat.st_uid, item_stat.st_size, item_stat.st_mode
 
 
